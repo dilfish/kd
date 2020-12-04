@@ -5,7 +5,7 @@ $(document).ready(function(){
 	};
         $.ajax({
             type: "POST",
-            url: "http://127.0.0.1:9999/v1/search/info",
+            url: "/v1/search/info",
             data: JSON.stringify(d),
             success: function(data) {
                 if (data.code != 0) {
