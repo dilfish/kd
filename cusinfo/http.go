@@ -2,17 +2,25 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 )
+
+const MaxRows = 100
+
+var ErrMaxRows = errors.New("search more than 100 rows")
 
 type SearchArgs struct {
 	OrderNo string `json:"order_no"`
 }
 
 type SearchRet struct {
+	Code              int     `json:"code"`
+	Msg               string  `json:"msg"`
 	Id                uint64  `json:"id"`
 	OrderTime         string  `json:"order_time"`
 	PayTime           string  `json:"pay_time"`
@@ -99,15 +107,42 @@ func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	c := 0
 	for rows.Next() {
 		err = rows.Scan(&ret.Id, &ret.OrderTime, &ret.PayTime, &ret.SubmitTime, &ret.ShipTime, &ret.RefundTime, &ret.PrintTime, &ret.PickOrderTime, &ret.CusAcc, &ret.CusName, &ret.CusEmail, &ret.RecvName, &ret.RecvCompany, &ret.RecvTaxNo, &ret.RecvAddrNo, &ret.AddDetail, &ret.Addr1, &ret.Addr2, &ret.Addr1plus2, &ret.RecvCity, &ret.RecvState, &ret.PostCode, &ret.Country, &ret.CountryCn, &ret.CountryCode, &ret.Phone, &ret.Cellphone, &ret.Sku, &ret.ProdId, &ret.ProdName, &ret.ProdPrice, &ret.PordNum, &ret.ProdMod, &ret.PicUrl, &ret.SourceUrl, &ret.SaleUrl, &ret.MultiProdName, &ret.PayMethod, &ret.Currency, &ret.OrderPrice, &ret.ShipFee, &ret.Refund, &ret.EstProfit, &ret.CostProfitRate, &ret.SaleProfitRate, &ret.EstShipFee, &ret.PkgNo, &ret.OrderNo, &ret.TxNo, &ret.OrderStatus, &ret.Platform, &ret.ShopAcc, &ret.OrderComment, &ret.PickComment, &ret.CusServiceComment, &ret.RefundReason, &ret.OrderTag, &ret.OrderLabel, &ret.AppointShip, &ret.ShipMethod, &ret.ShipNo, &ret.ShipOrder, &ret.Weight, &ret.CnClearanceName, &ret.EnClearanceName, &ret.ClearancePrice, &ret.ClearanceWeight, &ret.ClearanceNo)
 		if err != nil {
 			log.Println("scan error:", err)
 			return nil, err
 		}
+		c = c + 1
+		if c >= MaxRows {
+			return nil, ErrMaxRows
+		}
 	}
 	log.Println("ret is", ret)
 	return &ret, nil
+}
+
+func (s *Service) hsearch(mp url.Values) SearchRet {
+	var ret SearchRet
+	orderNo := mp["order_no"]
+	if len(orderNo) != 1 {
+		log.Println("bad args", orderNo)
+		ret.Code = 1
+		ret.Msg = "bad args"
+		return ret
+	}
+	var args SearchArgs
+	args.OrderNo = orderNo[0]
+	rt, err := s.queryDB(&args)
+	if err != nil {
+		log.Println("query error", args, err)
+		ret.Code = 2
+		ret.Msg = err.Error()
+		return ret
+	}
+	ret = *rt
+	return ret
 }
 
 func (s *Service) hget(w http.ResponseWriter, req *http.Request) {
@@ -116,21 +151,9 @@ func (s *Service) hget(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("bad request method"))
 		return
 	}
-	mp := req.URL.Query()
-	orderNo := mp["order_no"]
-	if len(orderNo) != 1 {
-		log.Println("bad args", orderNo)
-		w.Write([]byte("bad args"))
-		return
-	}
-	var args SearchArgs
-	args.OrderNo = orderNo[0]
-	ret, err := s.queryDB(&args)
-	if err != nil {
-		log.Println("query error", args, err)
-		w.Write([]byte("query error"))
-		return
-	}
+	log.Println("search", req.URL.Query())
+	ret := s.hsearch(req.URL.Query())
+	log.Println("search result:", ret.Code, ret.Msg)
 	bt, _ := json.Marshal(ret)
 	w.Write(bt)
 }
