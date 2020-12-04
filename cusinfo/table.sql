@@ -57,7 +57,7 @@ CREATE TABLE `cus_info` (
   `refund_reason` varchar(64) not null default '',
   `order_tag` varchar(64) not null default '',
   `order_label` varchar(64) not null default '',
-  `appoint_ship` varchar(128) not null default '',
+  `appoint_ship` text,
   `ship_method` varchar(64) not null default '',
   `ship_no` varchar(64) not null default '',
   `ship_order` varchar(64) not null default '',
