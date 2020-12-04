@@ -1,50 +1,115 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <title>Signin Template for Bootstrap</title>
-    <!-- Bootstrap core CSS -->
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <link href="signin.css" rel="stylesheet">
-    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
-    <script src="search.js"></script>
-  </head>
 
-  <body class="text-center">
-<div class="container">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>Signin Template for Bootstrap</title>
+  <!-- Bootstrap core CSS -->
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <link href="signin.css" rel="stylesheet">
+  <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <script src="search.js"></script>
+</head>
+
+<body class="text-center">
+  <div class="container">
     <form class="form-signin">
       <h1 class="h3 mb-3 font-weight-normal">查询</h1>
-      <label for="inputEmail" class="sr-only">订单号</label>
-      <input type="input" id="id-order-no" class="form-control" placeholder="订单号" required autofocus>
-      <button id='id-btn-search' class="btn btn-lg btn-primary btn-block" type="submit" onclick="return false">查询</button>
-    </form>
-</div>
-<div class="container">
-<table class="table">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">名称</th>
-      <th scope="col">记录</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th scope="row">1</th>
-      <td>买家 email </td>
-      <td id='id-email'>email</td>
-    </tr>
-    <tr>
-      <th scope="row">2</th>
-      <td>收货人姓名</td>
-      <td id='id-recv-name'>recv</td>
-    </tr>
-      </tbody>
-</table>
-</div>
 
-  </body>
+      <label for="inputOrder" class="sr-only">订单号</label>
+      <input type="input" id="id-order-no" class="form-control" placeholder="订单号" required autofocus>
+      <label for="inputTableName" class="sr-only">表名</label>
+      <input type="input" id="id-table-name" class="form-control" placeholder="表名" required autofocus>
+
+      <button id='id-btn-search' class="btn btn-lg btn-primary btn-block" type="submit"
+        onclick="return false">查询</button>
+    </form>
+  </div>
+  <div class="container">
+    <table class="table" id="id-table">
+      <thead>
+        <tr>
+
+          <th scope="col">数据库ID</th>
+          <th scope="col">下单时间</th>
+          <th scope="col">付款时间</th>
+          <th scope="col">提交时间</th>
+          <th scope="col">发货时间</th>
+          <th scope="col">退款时间</th>
+          <th scope="col">面单打印时间</th>
+          <th scope="col">拣货单打印时间</th>
+          <th scope="col">买家账号</th>
+          <th scope="col">买家姓名</th>
+          <th scope="col">买家Email</th>
+          <th scope="col">收货人姓名</th>
+          <th scope="col">收货人公司</th>
+          <th scope="col">收货人税号</th>
+          <th scope="col">收货人门牌号</th>
+          <th scope="col">详细地址</th>
+          <th scope="col">地址1</th>
+          <th scope="col">地址2</th>
+          <th scope="col">地址1+地址2</th>
+          <th scope="col">收货人城市</th>
+          <th scope="col">收货人州/省</th>
+          <th scope="col">邮编</th>
+          <th scope="col">收货人国家</th>
+          <th scope="col">中文国家名</th>
+          <th scope="col">国家二字码</th>
+          <th scope="col">收货人电话</th>
+          <th scope="col">收货人手机</th>
+          <th scope="col">SKU</th>
+          <th scope="col">产品ID</th>
+          <th scope="col">产品名称</th>
+          <th scope="col">产品售价</th>
+          <th scope="col">产品数量</th>
+          <th scope="col">产品规格</th>
+          <th scope="col">图片网址</th>
+          <th scope="col">来源URL</th>
+          <th scope="col">销售链接</th>
+          <th scope="col">多品名</th>
+          <th scope="col">付款方式</th>
+          <th scope="col">币种缩写</th>
+          <th scope="col">订单金额</th>
+          <th scope="col">买家支付运费</th>
+          <th scope="col">退款金额</th>
+          <th scope="col">预估利润</th>
+          <th scope="col">成本利润率</th>
+          <th scope="col">销售利润率</th>
+          <th scope="col">预估运费</th>
+          <th scope="col">包裹号</th>
+          <th scope="col">订单号</th>
+          <th scope="col">交易号</th>
+          <th scope="col">订单状态</th>
+          <th scope="col">平台渠道</th>
+          <th scope="col">店铺账号</th>
+          <th scope="col">订单备注</th>
+          <th scope="col">拣货备注</th>
+          <th scope="col">客服备注</th>
+          <th scope="col">退款理由</th>
+          <th scope="col">订单标识</th>
+          <th scope="col">订单标记</th>
+          <th scope="col">买家指定物流</th>
+          <th scope="col">物流方式</th>
+          <th scope="col">运单号</th>
+          <th scope="col">物流订单号</th>
+          <th scope="col">称重重量</th>
+          <th scope="col">中文报关名</th>
+          <th scope="col">英文报关名</th>
+          <th scope="col">申报单价</th>
+          <th scope="col">报关重量</th>
+          <th scope="col">海关编码</th>
+
+        </tr>
+      </thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
+
+</body>
+
 </html>

@@ -8,11 +8,15 @@ import (
 	"github.com/dilfish/tools"
 )
 
+var ErrBadNameLen = errors.New("名字长度不合法")
+var ErrBadLabel = errors.New("名字包含特殊字符")
+
 type Service struct {
-	db *sql.DB
+	db        *sql.DB
+	tableName string
 }
 
-func NewService(conf *tools.DBConfig) *Service {
+func NewService(conf *tools.DBConfig, t string) *Service {
 	db, err := tools.InitDB(conf)
 	if err != nil {
 		log.Println("init db error:", conf, err)
@@ -20,6 +24,7 @@ func NewService(conf *tools.DBConfig) *Service {
 	}
 	var s Service
 	s.db = db
+	s.tableName = t
 	return &s
 }
 
@@ -97,7 +102,9 @@ func (s *Service) InsertDB(data []string) error {
 	if len(data) != 67 {
 		return errors.New("bad data, we need 67 rows")
 	}
-	ssql := "insert into `cus_info` (`id`,`order_time`,`pay_time`,"
+	ssql := "insert into `"
+	ssql = ssql + s.tableName
+	ssql = ssql + "` (`id`,`order_time`,`pay_time`,"
 	ssql = ssql + "`submit_time`,`ship_time`,`refund_time`,`print_time`,"
 	ssql = ssql + "`pick_order_time`,`cus_acc`,`cus_name`,`cus_email`,"
 	ssql = ssql + "`recv_name`,`recv_company`,`recv_tax_no`,"
@@ -130,4 +137,41 @@ func (s *Service) InsertDB(data []string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Service) CreateTable() error {
+	start := "CREATE TABLE `"
+	end := "` (`id` int unsigned not null AUTO_INCREMENT,  `order_time` varchar(32) not null default '',`pay_time` varchar(32) not null default '',`submit_time` varchar(32) not null default '', `ship_time` varchar(32) not null default '', `refund_time` varchar(32) not null default '', `print_time` varchar(32) not null default '', `pick_order_time` varchar(32) not null default '', `cus_acc` varchar(64) not null default '', `cus_name` varchar(64) not null default '',`cus_email` varchar(64) not null default '', `recv_name` varchar(64) not null default '', `recv_company` varchar(64) not null default '', `recv_tax_no` varchar(64) not null default '', `recv_addr_no` varchar(64) not null default '', `addr_detail` text,`addr1` text, `addr2` text, `addr1plus2` text, `recv_city` varchar(64) not null default '', `recv_state` varchar(64) not null default '', `postcode` varchar(64) not null default '', `country` varchar(64) not null default '',`country_cn` varchar(64) not null default '',`country_code` varchar(64) not null default '', `phone` varchar(64) not null default '',`cellphone` varchar(64) not null default '', `sku` text, `prod_id` text, `prod_name` text,  `prod_price` text, `prod_num` varchar(64) not null default '', `prod_mod` text, `pic_url` text, `source_url` text, `sale_url` text,`multi_prod_name` text,`pay_method` varchar(128) not null default '',`currency` varchar(128) not null default '', `order_price` float not null default 0, `ship_fee` varchar(32) not null default '', `refund` varchar(32) not null default '', `est_profit` varchar(32) not null default '', `cost_profit_rate` varchar(32) not null default '', `sale_profit_rate` varchar(32) not null default '', `est_ship_fee` varchar(32) not null default '', `pkg_no` varchar(64) not null default '', `order_no` varchar(64) not null default '', `tx_no` text, `order_status` varchar(64) not null default '', `platform` varchar(64) not null default '',`shop_acc` varchar(64) not null default '', `order_comment` text, `pick_comment` varchar(64) not null default '',`cus_service_comment` varchar(64) not null default '',`refund_reason` varchar(64) not null default '',`order_tag` varchar(64) not null default '', `order_label` varchar(64) not null default '',`appoint_ship` text, `ship_method` varchar(64) not null default '', `ship_no` varchar(64) not null default '', `ship_order` varchar(64) not null default '', `weight` varchar(32) not null default '', `cn_clearance_name` varchar(64) not null default '', `en_clearance_name` varchar(128) not null default '', `clearance_price` varchar(64) not null default '', `clearance_weight` varchar(32) not null default '', `clearance_no` varchar(64) not null default '', PRIMARY KEY (`id`)) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;"
+
+	name := s.tableName
+	if len(name) < 1 || len(name) > 50 {
+		log.Println("name len is:", len(name))
+		return ErrBadNameLen
+	}
+	for _, n := range name {
+		if checkNumLetter(n) == false {
+			log.Println("label is not good:", name)
+			return ErrBadLabel
+		}
+	}
+	ssql := start + name + end
+	_, err := s.db.Exec(ssql)
+	if err != nil {
+		log.Println("create table error:", err)
+		return err
+	}
+	return nil
+}
+
+func checkNumLetter(n rune) bool {
+	if n <= '9' && n >= '0' {
+		return true
+	}
+	if n <= 'z' && n >= 'a' {
+		return true
+	}
+	if n <= 'Z' && n >= 'A' {
+		return true
+	}
+	return false
 }
