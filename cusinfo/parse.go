@@ -26,7 +26,7 @@ func (s *Service) Do(fn string) error {
 		if idx == 0 {
 			continue
 		}
-		if (idx % 20) == 0 {
+		if (idx % 50) == 0 {
 			log.Println("we have inserted", idx, "records")
 		}
 		err := s.InsertDB(t)

@@ -27,7 +27,7 @@ CREATE TABLE `cus_info` (
   `phone` varchar(64) not null default '',
   `cellphone` varchar(64) not null default '',
   `sku` text,
-  `prod_id` varchar(128) not null default '',
+  `prod_id` text,
   `prod_name` text,
   `prod_price` varchar(64) not null default '',
   `prod_num` varchar(64) not null default '',
