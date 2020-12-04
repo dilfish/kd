@@ -120,43 +120,9 @@ func (s *Service) InsertDB(data []string) error {
 		ssql = ssql + "?,"
 	}
 	ssql = ssql + "?);"
-	// log.Println("ssql is", ssql)
-	// time == 0, string == 1, float == 2
-	typeList := []int{
-		0, 0, 0, 0, 0, 0, 0, // 7 time
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 11 string, until addr1plus2
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 11 string, until prod_name
-		1, 1, 1, 1, 1, 1, 1, 1, 1, // 9 string, until order_price
-		2, 2, 2, 2, 2, 2, 2, // 7 float, until pkg_no
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 11 string, until order label
-		1, 1, 1, 1, 1, // 5 string, until weight
-		2,       // 1 float until cn_clearance_name
-		1, 1, 1, // 3 string until clearance_price
-		2, // 1 float, until clearn_no
-		1, // 1 string
-	}
 	args := []interface{}{}
 	for i := 0; i < 67; i++ {
-		if typeList[i] == TypeTime {
-			tm, err := HandleTime(data[i])
-			if err != nil {
-				log.Println("handle time error:", data[i], err)
-				return err
-			}
-			args = append(args, tm)
-		}
-		if typeList[i] == TypeString {
-			str := HandleString(data[i])
-			args = append(args, str)
-		}
-		if typeList[i] == TypeFloat {
-			fl, err := HandleFloat(data[i])
-			if err != nil {
-				log.Println("handle float error:", data[i], err)
-				return err
-			}
-			args = append(args, fl)
-		}
+		args = append(args, data[i])
 	}
 	_, err := s.db.Exec(ssql, args...)
 	if err != nil {
