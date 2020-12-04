@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 const MaxRows = 100
@@ -51,8 +52,8 @@ type SearchRet struct {
 	Sku               string  `json:"sku"`
 	ProdId            string  `json:"prod_id"`
 	ProdName          string  `json:"prod_name"`
-	ProdPrice         float32 `json:"prod_price"`
-	PordNum           int     `json:"prod_num"`
+	ProdPrice         string `json:"prod_price"`
+	PordNum           string     `json:"prod_num"`
 	ProdMod           string  `json:"prod_mod"`
 	PicUrl            string  `json:"pic_url"`
 	SourceUrl         string  `json:"source_url"`
@@ -119,7 +120,7 @@ func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
 			return nil, ErrMaxRows
 		}
 	}
-	log.Println("ret is", ret)
+	// log.Println("ret is", ret)
 	return &ret, nil
 }
 
@@ -158,7 +159,15 @@ func (s *Service) hget(w http.ResponseWriter, req *http.Request) {
 	w.Write(bt)
 }
 
+
+func replaceCRLF(bt []byte) string {
+	str := strings.Replace(string(bt), "\r", ",", -1)
+	str = strings.Replace(str, "\n", ",", -1)
+	return str
+}
+
 func (s *Service) h(w http.ResponseWriter, req *http.Request) {
+	log.Println("enter /v1/search/info")
 	if req.Method != "POST" {
 		log.Println("method is not post:", req.Method)
 		w.Write([]byte("bad request method"))
@@ -171,6 +180,7 @@ func (s *Service) h(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("bad read"))
 		return
 	}
+	log.Println("bt is", string(bt))
 	var args SearchArgs
 	err = json.Unmarshal(bt, &args)
 	if err != nil {
@@ -184,19 +194,26 @@ func (s *Service) h(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("query error"))
 		return
 	}
+	log.Println("ret is", ret.Code, ret.Msg)
 	bt, err = json.Marshal(ret)
 	if err != nil {
 		log.Println("marshal error:", err)
 		w.Write([]byte("marshal error"))
 		return
 	}
+	// str := replaceCRLF(bt)
+	// log.Println("write bt is", len(str))
+	w.Header().Set("Content-Type", "application/json")
+	// w.Header().Set("Content-Length", strconv.FormatInt(int64(len(str)), 10))
 	w.Write(bt)
 	return
 }
 
+
 func (s *Service) Srv(port int) error {
 	http.HandleFunc("/v1/search/info", s.h)
 	http.HandleFunc("/v1/search/msg", s.hget)
+	http.Handle("/", http.FileServer(http.Dir("./html")))
 	addr := ":" + strconv.FormatInt(int64(port), 10)
 	log.Println("listen on:", addr)
 	return http.ListenAndServe(addr, nil)
