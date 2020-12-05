@@ -1,7 +1,6 @@
 $(document).ready(function () {
     load_table_name();
     $('#id-btn-search').click(function () {
-        alert($('#id-select').val());
         let d = {
             order_no: $('#id-order-no').val(),
             table_name: $('#id-select').val()
