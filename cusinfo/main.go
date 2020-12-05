@@ -12,7 +12,7 @@ import (
 
 var flagExcelFile = flag.String("f", "", "execl file name")
 var flagSrvPort = flag.Int("p", 0, "server port")
-var flagConfig = flag.String("c", "", "config file name")
+var flagConfig = flag.String("c", "./config.conf", "config file name")
 var flagTableName = flag.String("t", "", "table name")
 
 func HandleFlag(fn string) (tools.DBConfig, error) {
