@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -220,41 +221,41 @@ func (s *Service) getTable(w http.ResponseWriter, req *http.Request) {
 	w.Write(bt)
 }
 
-func (s *Service) h(w http.ResponseWriter, req *http.Request) {
-	log.Println("enter /v1/search/info")
-	if req.Method != "POST" {
-		log.Println("method is not post:", req.Method)
-		w.Write([]byte("bad request method"))
-		return
-	}
-	defer req.Body.Close()
-	bt, err := ioutil.ReadAll(req.Body)
+func (s *Service) postSearch(reader io.ReadCloser) SearchRet {
+	var ret SearchRet
+	defer reader.Close()
+	bt, err := ioutil.ReadAll(reader)
 	if err != nil {
 		log.Println("read all error:", err)
-		w.Write([]byte("bad read"))
-		return
+		ret.Code = 1
+		ret.Msg = "read msg error:" + err.Error()
+		return ret
 	}
 	log.Println("bt is", string(bt))
 	var args SearchArgs
 	err = json.Unmarshal(bt, &args)
 	if err != nil {
 		log.Println("unmarshal error:", err)
-		w.Write([]byte("unjosn error"))
-		return
+		ret.Code = 2
+		ret.Msg = "unmarshal error:" + err.Error()
+		return ret
 	}
-	ret, err := s.queryDB(&args)
+	qr, err := s.queryDB(&args)
 	if err != nil {
 		log.Println("query error:", err)
-		w.Write([]byte("query error"))
-		return
+		ret.Code = 3
+		ret.Msg = "query error:" + err.Error()
+		return ret
 	}
 	log.Println("ret is", ret.Code, ret.Msg)
-	bt, err = json.Marshal(ret)
-	if err != nil {
-		log.Println("marshal error:", err)
-		w.Write([]byte("marshal error"))
-		return
-	}
+	ret = *qr
+	return ret
+}
+
+func (s *Service) h(w http.ResponseWriter, req *http.Request) {
+	log.Println("enter /v1/search/info")
+	ret := s.postSearch(req.Body)
+	bt, _ := json.Marshal(ret)
 	str := filterNR(bt)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(str))
