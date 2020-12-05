@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -132,49 +131,16 @@ func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
 		}
 		c = c + 1
 		if c >= MaxRows {
+			log.Println("c bigger than maxrows", c)
 			return nil, ErrMaxRows
 		}
 		result.List = append(result.List, ret)
 	}
 	if len(result.List) == 0 {
+		log.Println("empty result")
 		return nil, ErrNoResult
 	}
 	return &result, nil
-}
-
-func (s *Service) hsearch(mp url.Values) SearchRet {
-	var ret SearchRet
-	orderNo := mp["order_no"]
-	if len(orderNo) != 1 {
-		log.Println("bad args", orderNo)
-		ret.Code = 1
-		ret.Msg = "bad args"
-		return ret
-	}
-	var args SearchArgs
-	args.OrderNo = orderNo[0]
-	rt, err := s.queryDB(&args)
-	if err != nil {
-		log.Println("query error", args, err)
-		ret.Code = 2
-		ret.Msg = err.Error()
-		return ret
-	}
-	ret = *rt
-	return ret
-}
-
-func (s *Service) hget(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "GET" {
-		log.Println("method is not post:", req.Method)
-		w.Write([]byte("bad request method"))
-		return
-	}
-	log.Println("search", req.URL.Query())
-	ret := s.hsearch(req.URL.Query())
-	log.Println("search result:", ret.Code, ret.Msg)
-	bt, _ := json.Marshal(ret)
-	w.Write(bt)
 }
 
 func replaceCRLF(bt []byte) string {
@@ -215,6 +181,7 @@ func (s *Service) getTableList() TableList {
 }
 
 func (s *Service) getTable(w http.ResponseWriter, req *http.Request) {
+	log.Println("enter /v1/table/list by", req.RemoteAddr)
 	tl := s.getTableList()
 	bt, _ := json.Marshal(tl)
 	w.Header().Set("Content-Type", "application/json")
@@ -253,7 +220,7 @@ func (s *Service) postSearch(reader io.ReadCloser) SearchRet {
 }
 
 func (s *Service) h(w http.ResponseWriter, req *http.Request) {
-	log.Println("enter /v1/search/info")
+	log.Println("enter /v1/search/info by", req.RemoteAddr)
 	ret := s.postSearch(req.Body)
 	bt, _ := json.Marshal(ret)
 	str := filterNR(bt)
@@ -270,7 +237,6 @@ func filterNR(bt []byte) string {
 
 func (s *Service) Srv(port int) error {
 	http.HandleFunc("/v1/search/info", s.h)
-	http.HandleFunc("/v1/search/msg", s.hget)
 	http.HandleFunc("/v1/table/list", s.getTable)
 	http.Handle("/", http.FileServer(http.Dir("./html")))
 	addr := ":" + strconv.FormatInt(int64(port), 10)
