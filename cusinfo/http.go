@@ -211,7 +211,7 @@ func (s *Service) postSearch(xl *log.Logger, reader io.ReadCloser) SearchRet {
 	}
 	qr, err := s.queryDB(xl, &args)
 	if err != nil {
-		xl.Println("查询数据库错我:", err)
+		xl.Println("查询数据库错误:", err)
 		ret.Code = 3
 		ret.Msg = "查询数据库错误:" + err.Error()
 		return ret
