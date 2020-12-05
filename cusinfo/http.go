@@ -98,12 +98,12 @@ type DBItem struct {
 	ClearanceNo       string `json:"clearance_no"`
 }
 
-func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
+func (s *Service) queryDB(xl *log.Logger, args *SearchArgs) (*SearchRet, error) {
 	var ret DBItem
 	var result SearchRet
-	log.Printf("args is %+v", args)
+	xl.Printf("args is %+v", args)
 	if args.TableName == "" {
-		log.Println("bad table name", args.TableName)
+		xl.Println("bad table name", args.TableName)
 		return nil, ErrBadTable
 	}
 	s.tableName = args.TableName
@@ -118,7 +118,7 @@ func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
 	}
 	rows, err := s.db.Query(ssql+where, qs...)
 	if err != nil {
-		log.Println("query error:", where, err)
+		xl.Println("query error:", where, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -126,18 +126,18 @@ func (s *Service) queryDB(args *SearchArgs) (*SearchRet, error) {
 	for rows.Next() {
 		err = rows.Scan(&ret.Id, &ret.OrderTime, &ret.PayTime, &ret.SubmitTime, &ret.ShipTime, &ret.RefundTime, &ret.PrintTime, &ret.PickOrderTime, &ret.CusAcc, &ret.CusName, &ret.CusEmail, &ret.RecvName, &ret.RecvCompany, &ret.RecvTaxNo, &ret.RecvAddrNo, &ret.AddDetail, &ret.Addr1, &ret.Addr2, &ret.Addr1plus2, &ret.RecvCity, &ret.RecvState, &ret.PostCode, &ret.Country, &ret.CountryCn, &ret.CountryCode, &ret.Phone, &ret.Cellphone, &ret.Sku, &ret.ProdId, &ret.ProdName, &ret.ProdPrice, &ret.PordNum, &ret.ProdMod, &ret.PicUrl, &ret.SourceUrl, &ret.SaleUrl, &ret.MultiProdName, &ret.PayMethod, &ret.Currency, &ret.OrderPrice, &ret.ShipFee, &ret.Refund, &ret.EstProfit, &ret.CostProfitRate, &ret.SaleProfitRate, &ret.EstShipFee, &ret.PkgNo, &ret.OrderNo, &ret.TxNo, &ret.OrderStatus, &ret.Platform, &ret.ShopAcc, &ret.OrderComment, &ret.PickComment, &ret.CusServiceComment, &ret.RefundReason, &ret.OrderTag, &ret.OrderLabel, &ret.AppointShip, &ret.ShipMethod, &ret.ShipNo, &ret.ShipOrder, &ret.Weight, &ret.CnClearanceName, &ret.EnClearanceName, &ret.ClearancePrice, &ret.ClearanceWeight, &ret.ClearanceNo)
 		if err != nil {
-			log.Println("scan error:", err)
+			xl.Println("scan error:", err)
 			return nil, err
 		}
 		c = c + 1
 		if c >= MaxRows {
-			log.Println("c bigger than maxrows", c)
+			xl.Println("c bigger than maxrows", c)
 			return nil, ErrMaxRows
 		}
 		result.List = append(result.List, ret)
 	}
 	if len(result.List) == 0 {
-		log.Println("empty result")
+		xl.Println("empty result")
 		return nil, ErrNoResult
 	}
 	return &result, nil
@@ -155,14 +155,14 @@ type TableList struct {
 	List []string `json:"list"`
 }
 
-func (s *Service) getTableList() TableList {
+func (s *Service) getTableList(xl *log.Logger) TableList {
 	var tl TableList
 	ssql := "show tables"
 	rows, err := s.db.Query(ssql)
 	if err != nil {
 		tl.Code = 1
 		tl.Msg = err.Error()
-		log.Println("query table error:", err)
+		xl.Println("query table error:", err)
 		return tl
 	}
 	defer rows.Close()
@@ -172,56 +172,59 @@ func (s *Service) getTableList() TableList {
 		if err != nil {
 			tl.Code = 2
 			tl.Msg = err.Error()
-			log.Println("scan error:", err)
+			xl.Println("scan error:", err)
 			return tl
 		}
 		tl.List = append(tl.List, table)
 	}
+	xl.Println("we have", len(tl.List), "tables")
 	return tl
 }
 
 func (s *Service) getTable(w http.ResponseWriter, req *http.Request) {
-	log.Println("enter /v1/table/list by", req.RemoteAddr)
-	tl := s.getTableList()
+	xl := NewLog(req.RemoteAddr)
+	xl.Println("enter /v1/table/list")
+	tl := s.getTableList(xl)
 	bt, _ := json.Marshal(tl)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(bt)
 }
 
-func (s *Service) postSearch(reader io.ReadCloser) SearchRet {
+func (s *Service) postSearch(xl *log.Logger, reader io.ReadCloser) SearchRet {
 	var ret SearchRet
 	defer reader.Close()
 	bt, err := ioutil.ReadAll(reader)
 	if err != nil {
-		log.Println("read all error:", err)
+		xl.Println("read all error:", err)
 		ret.Code = 1
 		ret.Msg = "read msg error:" + err.Error()
 		return ret
 	}
-	log.Println("bt is", string(bt))
+	xl.Println("bt is", string(bt))
 	var args SearchArgs
 	err = json.Unmarshal(bt, &args)
 	if err != nil {
-		log.Println("unmarshal error:", err)
+		xl.Println("unmarshal error:", err)
 		ret.Code = 2
 		ret.Msg = "unmarshal error:" + err.Error()
 		return ret
 	}
-	qr, err := s.queryDB(&args)
+	qr, err := s.queryDB(xl, &args)
 	if err != nil {
-		log.Println("query error:", err)
+		xl.Println("query error:", err)
 		ret.Code = 3
 		ret.Msg = "query error:" + err.Error()
 		return ret
 	}
-	log.Println("ret is", ret.Code, ret.Msg)
+	xl.Println("ret is", ret.Code, ret.Msg)
 	ret = *qr
 	return ret
 }
 
-func (s *Service) h(w http.ResponseWriter, req *http.Request) {
-	log.Println("enter /v1/search/info by", req.RemoteAddr)
-	ret := s.postSearch(req.Body)
+func (s *Service) getInfo(w http.ResponseWriter, req *http.Request) {
+	xl := NewLog(req.RemoteAddr)
+	xl.Println("enter /v1/search/info")
+	ret := s.postSearch(xl, req.Body)
 	bt, _ := json.Marshal(ret)
 	str := filterNR(bt)
 	w.Header().Set("Content-Type", "application/json")
@@ -236,7 +239,7 @@ func filterNR(bt []byte) string {
 }
 
 func (s *Service) Srv(port int) error {
-	http.HandleFunc("/v1/search/info", s.h)
+	http.HandleFunc("/v1/search/info", s.getInfo)
 	http.HandleFunc("/v1/table/list", s.getTable)
 	http.Handle("/", http.FileServer(http.Dir("./html")))
 	addr := ":" + strconv.FormatInt(int64(port), 10)
