@@ -40,7 +40,11 @@ func HandleFlag(fn string) (tools.DBConfig, error) {
 func main() {
 	flag.Parse()
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	conf, err := HandleFlag(*flagConfig)
+	config := *flagConfig
+	if config == "" {
+		config = "./config.conf"
+	}
+	conf, err := HandleFlag(config)
 	if err != nil {
 		log.Println("配置文件错误：", err)
 		return

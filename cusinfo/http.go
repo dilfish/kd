@@ -182,6 +182,44 @@ func replaceCRLF(bt []byte) string {
 	return str
 }
 
+type TableList struct {
+	Code int      `json:"code"`
+	Msg  string   `json:"msg"`
+	List []string `json:"list"`
+}
+
+func (s *Service) getTableList() TableList {
+	var tl TableList
+	ssql := "show tables"
+	rows, err := s.db.Query(ssql)
+	if err != nil {
+		tl.Code = 1
+		tl.Msg = err.Error()
+		log.Println("query table error:", err)
+		return tl
+	}
+	defer rows.Close()
+	var table string
+	for rows.Next() {
+		err = rows.Scan(&table)
+		if err != nil {
+			tl.Code = 2
+			tl.Msg = err.Error()
+			log.Println("scan error:", err)
+			return tl
+		}
+		tl.List = append(tl.List, table)
+	}
+	return tl
+}
+
+func (s *Service) getTable(w http.ResponseWriter, req *http.Request) {
+	tl := s.getTableList()
+	bt, _ := json.Marshal(tl)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(bt)
+}
+
 func (s *Service) h(w http.ResponseWriter, req *http.Request) {
 	log.Println("enter /v1/search/info")
 	if req.Method != "POST" {
@@ -232,6 +270,7 @@ func filterNR(bt []byte) string {
 func (s *Service) Srv(port int) error {
 	http.HandleFunc("/v1/search/info", s.h)
 	http.HandleFunc("/v1/search/msg", s.hget)
+	http.HandleFunc("/v1/table/list", s.getTable)
 	http.Handle("/", http.FileServer(http.Dir("./html")))
 	addr := ":" + strconv.FormatInt(int64(port), 10)
 	log.Println("listen on:", addr)

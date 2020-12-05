@@ -1,8 +1,10 @@
 $(document).ready(function () {
+    load_table_name();
     $('#id-btn-search').click(function () {
+        alert($('#id-select').val());
         let d = {
             order_no: $('#id-order-no').val(),
-            table_name: $('#id-table-name').val()
+            table_name: $('#id-select').val()
         };
         $.ajax({
             type: "POST",
@@ -19,6 +21,31 @@ $(document).ready(function () {
         });
     });
 });
+
+function set_table_name(data) {
+    var list;
+    for (var i = 0; i < data.list.length; i++) {
+        list = list + "<option value=" + data.list[i] + ">";
+        list = list + data.list[i] + "</option>";
+    }
+    $("#id-select").html(list);
+    return;
+}
+
+function load_table_name() {
+    $.ajax({
+        type: "GET",
+        url: "/v1/table/list",
+        success: function (data) {
+            if (data.code != 0) {
+                alert('获取列表失败!');
+            } else {
+                set_table_name(data);
+            }
+        },
+        dataType: 'json'
+    });
+}
 
 function setTable(data) {
     let table = $('#id-table');
