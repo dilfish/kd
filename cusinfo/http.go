@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-const MaxRows = 100
+const MaxRows = 20
 
-var ErrMaxRows = errors.New("search more than 100 rows")
-var ErrBadTable = errors.New("bad table name")
-var ErrNoResult = errors.New("no result")
+var ErrMaxRows = errors.New("大于20条记录将不能显示")
+var ErrBadTable = errors.New("不能当做表名字")
+var ErrNoResult = errors.New("没有记录")
 
 type SearchArgs struct {
 	OrderNo   string `json:"order_no"`
@@ -101,9 +101,9 @@ type DBItem struct {
 func (s *Service) queryDB(xl *log.Logger, args *SearchArgs) (*SearchRet, error) {
 	var ret DBItem
 	var result SearchRet
-	xl.Printf("args is %+v", args)
+	xl.Printf("查询参数: %+v", args)
 	if args.TableName == "" {
-		xl.Println("bad table name", args.TableName)
+		xl.Println("错误的表名：", args.TableName)
 		return nil, ErrBadTable
 	}
 	s.tableName = args.TableName
@@ -118,7 +118,7 @@ func (s *Service) queryDB(xl *log.Logger, args *SearchArgs) (*SearchRet, error) 
 	}
 	rows, err := s.db.Query(ssql+where, qs...)
 	if err != nil {
-		xl.Println("query error:", where, err)
+		xl.Println("查询错误:", where, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -126,18 +126,18 @@ func (s *Service) queryDB(xl *log.Logger, args *SearchArgs) (*SearchRet, error) 
 	for rows.Next() {
 		err = rows.Scan(&ret.Id, &ret.OrderTime, &ret.PayTime, &ret.SubmitTime, &ret.ShipTime, &ret.RefundTime, &ret.PrintTime, &ret.PickOrderTime, &ret.CusAcc, &ret.CusName, &ret.CusEmail, &ret.RecvName, &ret.RecvCompany, &ret.RecvTaxNo, &ret.RecvAddrNo, &ret.AddDetail, &ret.Addr1, &ret.Addr2, &ret.Addr1plus2, &ret.RecvCity, &ret.RecvState, &ret.PostCode, &ret.Country, &ret.CountryCn, &ret.CountryCode, &ret.Phone, &ret.Cellphone, &ret.Sku, &ret.ProdId, &ret.ProdName, &ret.ProdPrice, &ret.PordNum, &ret.ProdMod, &ret.PicUrl, &ret.SourceUrl, &ret.SaleUrl, &ret.MultiProdName, &ret.PayMethod, &ret.Currency, &ret.OrderPrice, &ret.ShipFee, &ret.Refund, &ret.EstProfit, &ret.CostProfitRate, &ret.SaleProfitRate, &ret.EstShipFee, &ret.PkgNo, &ret.OrderNo, &ret.TxNo, &ret.OrderStatus, &ret.Platform, &ret.ShopAcc, &ret.OrderComment, &ret.PickComment, &ret.CusServiceComment, &ret.RefundReason, &ret.OrderTag, &ret.OrderLabel, &ret.AppointShip, &ret.ShipMethod, &ret.ShipNo, &ret.ShipOrder, &ret.Weight, &ret.CnClearanceName, &ret.EnClearanceName, &ret.ClearancePrice, &ret.ClearanceWeight, &ret.ClearanceNo)
 		if err != nil {
-			xl.Println("scan error:", err)
+			xl.Println("获取数据错误:", err)
 			return nil, err
 		}
 		c = c + 1
 		if c >= MaxRows {
-			xl.Println("c bigger than maxrows", c)
+			xl.Println("大于最大允许的条数：", c)
 			return nil, ErrMaxRows
 		}
 		result.List = append(result.List, ret)
 	}
 	if len(result.List) == 0 {
-		xl.Println("empty result")
+		xl.Println("没有记录")
 		return nil, ErrNoResult
 	}
 	return &result, nil
@@ -162,7 +162,7 @@ func (s *Service) getTableList(xl *log.Logger) TableList {
 	if err != nil {
 		tl.Code = 1
 		tl.Msg = err.Error()
-		xl.Println("query table error:", err)
+		xl.Println("查询数据库错误:", err)
 		return tl
 	}
 	defer rows.Close()
@@ -172,18 +172,18 @@ func (s *Service) getTableList(xl *log.Logger) TableList {
 		if err != nil {
 			tl.Code = 2
 			tl.Msg = err.Error()
-			xl.Println("scan error:", err)
+			xl.Println("获取数据错误:", err)
 			return tl
 		}
 		tl.List = append(tl.List, table)
 	}
-	xl.Println("we have", len(tl.List), "tables")
+	xl.Println("我们有", len(tl.List), "张表")
 	return tl
 }
 
 func (s *Service) getTable(w http.ResponseWriter, req *http.Request) {
 	xl := NewLog(req.RemoteAddr)
-	xl.Println("enter /v1/table/list")
+	xl.Println("调用 /v1/table/list")
 	tl := s.getTableList(xl)
 	bt, _ := json.Marshal(tl)
 	w.Header().Set("Content-Type", "application/json")
@@ -195,35 +195,35 @@ func (s *Service) postSearch(xl *log.Logger, reader io.ReadCloser) SearchRet {
 	defer reader.Close()
 	bt, err := ioutil.ReadAll(reader)
 	if err != nil {
-		xl.Println("read all error:", err)
+		xl.Println("读取 HTTP 请求错误:", err)
 		ret.Code = 1
-		ret.Msg = "read msg error:" + err.Error()
+		ret.Msg = "读取 HTTP 请求错误:" + err.Error()
 		return ret
 	}
-	xl.Println("bt is", string(bt))
+	xl.Println("请求数据：", string(bt))
 	var args SearchArgs
 	err = json.Unmarshal(bt, &args)
 	if err != nil {
-		xl.Println("unmarshal error:", err)
+		xl.Println("错误的 json 数据:", err)
 		ret.Code = 2
-		ret.Msg = "unmarshal error:" + err.Error()
+		ret.Msg = "解压 json 错误:" + err.Error()
 		return ret
 	}
 	qr, err := s.queryDB(xl, &args)
 	if err != nil {
-		xl.Println("query error:", err)
+		xl.Println("查询数据库错我:", err)
 		ret.Code = 3
-		ret.Msg = "query error:" + err.Error()
+		ret.Msg = "查询数据库错误:" + err.Error()
 		return ret
 	}
-	xl.Println("ret is", ret.Code, ret.Msg)
+	xl.Println("返回结果", ret.Code, ret.Msg)
 	ret = *qr
 	return ret
 }
 
 func (s *Service) getInfo(w http.ResponseWriter, req *http.Request) {
 	xl := NewLog(req.RemoteAddr)
-	xl.Println("enter /v1/search/info")
+	xl.Println("调用 /v1/search/info")
 	ret := s.postSearch(xl, req.Body)
 	bt, _ := json.Marshal(ret)
 	str := filterNR(bt)
@@ -243,6 +243,6 @@ func (s *Service) Srv(port int) error {
 	http.HandleFunc("/v1/table/list", s.getTable)
 	http.Handle("/", http.FileServer(http.Dir("./html")))
 	addr := ":" + strconv.FormatInt(int64(port), 10)
-	log.Println("listen on:", addr)
+	log.Println("监听:", addr)
 	return http.ListenAndServe(addr, nil)
 }

@@ -10,27 +10,27 @@ import (
 	"github.com/dilfish/tools"
 )
 
-var flagExcelFile = flag.String("f", "", "execl file name")
-var flagSrvPort = flag.Int("p", 0, "server port")
+var flagExcelFile = flag.String("f", "", "execl 文件名")
+var flagSrvPort = flag.Int("p", 0, "监听端口")
 var flagConfig = flag.String("c", "./config.conf", "config file name")
-var flagTableName = flag.String("t", "", "table name")
+var flagTableName = flag.String("t", "", "数据库表名，推荐和 excel 文件一样，但不要后缀的 xlsx")
 
 func HandleFlag(fn string) (tools.DBConfig, error) {
 	var conf tools.DBConfig
 	file, err := os.Open(fn)
 	if err != nil {
-		log.Println("open file error:", fn, err)
+		log.Println("打开文件错误:", fn, err)
 		return conf, err
 	}
 	defer file.Close()
 	bt, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Println("read all error:", fn, err)
+		log.Println("读取文件错误:", fn, err)
 		return conf, err
 	}
 	err = json.Unmarshal(bt, &conf)
 	if err != nil {
-		log.Println("unjson error:", fn, err)
+		log.Println("解压 json 错误:", fn, err)
 		return conf, err
 	}
 	conf.Ext = "charset=utf8mb4&collation=utf8mb4_unicode_ci"
@@ -52,21 +52,21 @@ func main() {
 	if *flagExcelFile != "" {
 		s := NewService(&conf, *flagTableName)
 		if s == nil {
-			log.Println("connect db error:", conf)
+			log.Println("连接数据库错误:", conf)
 			return
 		}
 		err := s.Do(*flagExcelFile)
-		log.Println("insert result:", err)
+		log.Println("写入数据库错误:", err)
 		return
 	}
 	if *flagSrvPort != 0 {
 		s := NewService(&conf, *flagTableName)
 		if s == nil {
-			log.Println("connect db error:", conf)
+			log.Println("连接数据库错误:", conf)
 			return
 		}
 		err := s.Srv(*flagSrvPort)
-		log.Println("server mode:", err)
+		log.Println("服务器启动错误:", err)
 	}
 	return
 }

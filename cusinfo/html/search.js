@@ -11,7 +11,7 @@ $(document).ready(function () {
             data: JSON.stringify(d),
             success: function (data) {
                 if (data.code != 0) {
-                    alert('查询失败!');
+                    alert('查询失败! 原因：' + data.msg);
                 } else {
                     setTable(data);
                 }
@@ -37,7 +37,7 @@ function load_table_name() {
         url: "/v1/table/list",
         success: function (data) {
             if (data.code != 0) {
-                alert('获取列表失败!');
+                alert('获取列表失败!原因：' + data.msg);
             } else {
                 set_table_name(data);
             }
@@ -62,9 +62,6 @@ function setTable(data) {
         ht = ht + "<td>" + data.list[i].cus_name + "</td>";
         ht = ht + "<td>" + data.list[i].cus_email + "</td>";
         ht = ht + "<td>" + data.list[i].recv_name + "</td>";
-        /*
-      
-        */
         ht = ht + "</tr>";
         table.append(ht);
     }

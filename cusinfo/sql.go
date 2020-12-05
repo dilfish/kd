@@ -19,7 +19,7 @@ type Service struct {
 func NewService(conf *tools.DBConfig, t string) *Service {
 	db, err := tools.InitDB(conf)
 	if err != nil {
-		log.Println("init db error:", conf, err)
+		log.Println("连接数据库错误:", conf, err)
 		return nil
 	}
 	var s Service
@@ -100,7 +100,7 @@ func NewService(conf *tools.DBConfig, t string) *Service {
 
 func (s *Service) InsertDB(data []string) error {
 	if len(data) != 67 {
-		return errors.New("bad data, we need 67 rows")
+		return errors.New("数据格式错误，我们要求数据必须是67列")
 	}
 	ssql := "insert into `"
 	ssql = ssql + s.tableName
@@ -133,7 +133,7 @@ func (s *Service) InsertDB(data []string) error {
 	}
 	_, err := s.db.Exec(ssql, args...)
 	if err != nil {
-		log.Println("db.insert error:", err)
+		log.Println("插入数据错误:", err)
 		return err
 	}
 	return nil
@@ -145,19 +145,19 @@ func (s *Service) CreateTable() error {
 
 	name := s.tableName
 	if len(name) < 1 || len(name) > 50 {
-		log.Println("name len is:", len(name))
+		log.Println("名字长度不允许:", len(name))
 		return ErrBadNameLen
 	}
 	for _, n := range name {
 		if checkNumLetter(n) == false {
-			log.Println("label is not good:", name)
+			log.Println("名字含有特殊字符:", name)
 			return ErrBadLabel
 		}
 	}
 	ssql := start + name + end
 	_, err := s.db.Exec(ssql)
 	if err != nil {
-		log.Println("create table error:", err)
+		log.Println("创建表失败:", name, err)
 		return err
 	}
 	return nil

@@ -15,6 +15,6 @@ func NewLog(addr string) *log.Logger {
 		prefix = uu.String() + "-"
 	}
 	xl := log.New(os.Stderr, prefix, log.LstdFlags|log.Lshortfile)
-	xl.Println("New Log:", addr, prefix)
+	xl.Println("新的日志对象:", addr, prefix)
 	return xl
 }
